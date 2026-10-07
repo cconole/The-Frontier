@@ -1,0 +1,1139 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>The Frontier: AI Demystified</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  if (window.tailwind) tailwind.config = {
+    theme: { extend: { fontFamily: {
+      ui: ['"Chakra Petch"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+      mono: ['"JetBrains Mono"', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'Consolas', 'monospace']
+    } } }
+  };
+</script>
+<style>
+  :root {
+    --bg: #141a21; --pane: #1a2129; --pane-2: #202934; --line: #2c3846;
+    --ink: #d7e1ec; --mute: #7f8fa3; --cyan: #3ee6ff; --violet: #9b7bff;
+    --magenta: #ff52d9; --green: #4dffa0; --red: #ff4f63; --amber: #ffb84d;
+    color-scheme: dark;
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  /* The game is dark-only by design; tokens are restated so the viewer's theme switch can't wash it out. */
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) { --bg: #141a21; --pane: #1a2129; --pane-2: #202934; --line: #2c3846; --ink: #d7e1ec; --mute: #7f8fa3; }
+  }
+  :root[data-theme="dark"] { --bg: #141a21; --pane: #1a2129; --pane-2: #202934; --line: #2c3846; --ink: #d7e1ec; --mute: #7f8fa3; }
+  html { height: 100%; scroll-padding-top: env(safe-area-inset-top, 0px); }
+  *, *::before, *::after { box-sizing: inherit; }
+  body { height: 100%; margin: 0; background: var(--bg); color: var(--ink);
+    font-family: "Chakra Petch", ui-sans-serif, system-ui, sans-serif; overflow: hidden; }
+  .mute { color: var(--mute); }
+  .num { font-family: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace; font-variant-numeric: tabular-nums; }
+  .block { border-top: 1px solid var(--line); padding: 14px 0 16px; }
+  .block:first-child { border-top: 0; padding-top: 2px; }
+  .tree-h { font-size: 15px; font-weight: 600; margin: 18px 0 8px; display: flex; align-items: center; gap: 8px; }
+  .tree-h::before { content: ""; width: 14px; height: 2px; background: var(--accent, var(--cyan)); box-shadow: 0 0 8px var(--accent, var(--cyan)); }
+  .btn { border: 1px solid var(--line); background: var(--pane-2); color: var(--ink); border-radius: 6px;
+    padding: 6px 10px; font-size: 13px; line-height: 1.2; transition: border-color .15s, background .15s; }
+  .btn:hover:not(:disabled) { border-color: var(--cyan); }
+  .btn:disabled { opacity: .4; cursor: not-allowed; }
+  .btn:focus-visible, .tab:focus-visible, input:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+  .btn.on { border-color: var(--green); color: var(--green); box-shadow: 0 0 12px -2px rgba(77,255,160,.5) inset; }
+  .btn.sel { border-color: var(--cyan); color: var(--cyan); background: rgba(62,230,255,.08); }
+  .tab { padding: 10px 14px; font-size: 14px; color: var(--mute); border-bottom: 2px solid transparent; white-space: nowrap; }
+  .tab[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--cyan); }
+  .upg { border-left: 2px solid var(--line); padding: 8px 0 10px 12px; }
+  .upg.can { border-left-color: var(--accent, var(--cyan)); }
+  .pip { width: 10px; height: 4px; border-radius: 1px; background: var(--line); }
+  .pip.full { background: var(--accent, var(--cyan)); box-shadow: 0 0 6px var(--accent, var(--cyan)); }
+  .cost { font-size: 12px; padding: 1px 6px; border-radius: 4px; border: 1px solid var(--line); }
+  .cost.lc { color: var(--violet); } .cost.cy { color: var(--amber); }
+  .cost.short { color: var(--red); border-color: rgba(255,79,99,.4); }
+  input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 26px; background: transparent; }
+  input[type=range]::-webkit-slider-runnable-track { height: 4px; background: linear-gradient(90deg, var(--violet), var(--cyan)); border-radius: 2px; }
+  input[type=range]::-moz-range-track { height: 4px; background: linear-gradient(90deg, var(--violet), var(--cyan)); border-radius: 2px; }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; margin-top: -6px; border-radius: 50%;
+    background: var(--bg); border: 2px solid var(--cyan); box-shadow: 0 0 10px var(--cyan); }
+  input[type=range]::-moz-range-thumb { width: 14px; height: 14px; border-radius: 50%; background: var(--bg); border: 2px solid var(--cyan); box-shadow: 0 0 10px var(--cyan); }
+  .bar { height: 6px; background: var(--pane-2); border-radius: 3px; overflow: hidden; }
+  .bar > i { display: block; height: 100%; width: 0; transition: width .1s linear; }
+  #log .l { white-space: pre-wrap; word-break: break-word; }
+  #log .ok { color: var(--green); } #log .bad { color: var(--red); } #log .sys { color: var(--cyan); }
+  #log .warn { color: var(--amber); } #log .mag { color: var(--magenta); } #log .dim { color: var(--mute); }
+  #modal[hidden] { display: none; }
+  .modal-card { animation: rise .5s cubic-bezier(.2,.8,.2,1); }
+  @keyframes rise { from { opacity: 0; transform: translateY(14px) scale(.98); } to { opacity: 1; transform: none; } }
+  @media (prefers-reduced-motion: reduce) { .modal-card { animation: none; } }
+  .scroll-thin::-webkit-scrollbar { width: 8px; } .scroll-thin::-webkit-scrollbar-thumb { background: var(--line); border-radius: 4px; }
+</style>
+</head>
+<body>
+<div id="app" class="h-full flex flex-col lg:flex-row">
+
+  <!-- Left pane: canvas -->
+  <section class="relative flex flex-col lg:w-3/5 h-[52%] lg:h-full min-h-0 border-b lg:border-b-0 lg:border-r border-[color:var(--line)]">
+    <header class="flex flex-wrap items-end gap-x-6 gap-y-2 px-4 pt-3 pb-2 border-b border-[color:var(--line)] bg-[color:var(--pane)]">
+      <div class="mr-auto min-w-0">
+        <div id="lvlName" class="text-lg font-semibold leading-tight truncate">The Perceptron Era</div>
+        <div id="lvlObj" class="text-xs mute">Linear classification, proof 1 of 3</div>
+      </div>
+      <div>
+        <div class="text-[11px] mute">Error rate</div>
+        <div id="hudErr" class="num text-xl font-semibold leading-none" style="color:var(--red)">100.00%</div>
+      </div>
+      <div>
+        <div class="text-[11px] mute">Lean certificates</div>
+        <div id="hudLC" class="num text-base leading-none" style="color:var(--violet)">2</div>
+      </div>
+      <div>
+        <div class="text-[11px] mute">Compute yield</div>
+        <div class="num text-base leading-none" style="color:var(--amber)"><span id="hudCY">20</span> <span id="hudCYr" class="text-[11px] mute"></span></div>
+      </div>
+      <div class="w-28">
+        <div class="text-[11px] mute flex justify-between"><span>Grid power</span><span id="hudPowN" class="num">100</span></div>
+        <div class="bar mt-1"><i id="hudPow" style="background:var(--green)"></i></div>
+      </div>
+      <div class="w-28">
+        <div class="text-[11px] mute flex justify-between"><span>VRAM</span><span id="hudTok" class="num">0/60</span></div>
+        <div class="bar mt-1"><i id="hudVram" style="background:var(--cyan)"></i></div>
+      </div>
+    </header>
+    <div id="canvasWrap" class="relative flex-1 min-h-0">
+      <canvas id="cv" class="absolute inset-0 w-full h-full" style="touch-action:none" role="img"
+        aria-label="Data pipeline. Tokens flow from input nodes to a verifier and land on the target."></canvas>
+      <div id="hint" class="absolute left-3 bottom-2 right-24 text-xs mute pointer-events-none"></div>
+      <div id="fps" class="absolute right-3 bottom-2 num text-[10px] mute pointer-events-none"></div>
+    </div>
+  </section>
+
+  <!-- Right pane: HUD -->
+  <aside class="lg:w-2/5 flex flex-col min-h-0 flex-1 lg:flex-none bg-[color:var(--pane)]">
+    <nav role="tablist" aria-label="Control panels" class="flex overflow-x-auto border-b border-[color:var(--line)] px-2">
+      <button class="tab" role="tab" id="tab-tune" aria-controls="panel-tune" aria-selected="true">Architecture tuning</button>
+      <button class="tab" role="tab" id="tab-compute" aria-controls="panel-compute" aria-selected="false" tabindex="-1">Compute infrastructure</button>
+      <button class="tab" role="tab" id="tab-swarm" aria-controls="panel-swarm" aria-selected="false" tabindex="-1">Swarm autonomy</button>
+    </nav>
+
+    <div class="flex-1 min-h-0 overflow-y-auto px-4 py-3 scroll-thin">
+      <!-- Tuning -->
+      <div id="panel-tune" role="tabpanel" aria-labelledby="tab-tune">
+        <div class="block">
+          <div class="flex items-baseline justify-between">
+            <label for="wSlider" class="font-semibold">Weight</label>
+            <output id="wVal" for="wSlider" class="num text-2xl" style="color:var(--cyan)">0.500</output>
+          </div>
+          <input id="wSlider" type="range" min="0" max="1" step="0.001" value="0.5" />
+          <div class="flex flex-wrap gap-1.5 mt-1">
+            <button class="btn num" data-nudge="-0.01">−0.01</button>
+            <button class="btn num" data-nudge="-0.001">−0.001</button>
+            <button class="btn num" data-nudge="0.001">+0.001</button>
+            <button class="btn num" data-nudge="0.01">+0.01</button>
+          </div>
+          <p id="targetHint" class="text-sm mt-2"></p>
+        </div>
+        <div class="block">
+          <div class="font-semibold">Gradient descent</div>
+          <div class="text-xs mute mt-1">Step size. Bigger steps converge faster but overshoot and jitter.</div>
+          <div id="lrRow" class="grid grid-cols-6 gap-1 mt-2"></div>
+          <div class="flex flex-wrap gap-2 mt-3">
+            <button id="autoBtn" class="btn" role="switch" aria-checked="false">Auto-tune off</button>
+            <button id="stepBtn" class="btn">Take one step</button>
+          </div>
+          <p id="autoNote" class="text-xs mute mt-2">Auto-tune drains grid power while it runs.</p>
+        </div>
+        <div class="block">
+          <div class="font-semibold">What's actually happening</div>
+          <p id="lesson" class="text-sm mute mt-1 leading-relaxed max-w-[62ch]"></p>
+        </div>
+        <h2 class="tree-h" style="--accent:var(--magenta)">Algorithmic precision</h2>
+        <div id="tree-algo" style="--accent:var(--magenta)"></div>
+      </div>
+
+      <!-- Compute -->
+      <div id="panel-compute" role="tabpanel" aria-labelledby="tab-compute" hidden>
+        <div class="block">
+          <div class="grid grid-cols-2 gap-4 text-sm">
+            <div><div class="mute text-xs">Compute yield rate</div><div id="cRate" class="num text-lg" style="color:var(--amber)"></div></div>
+            <div><div class="mute text-xs">Token cap</div><div id="cCap" class="num text-lg" style="color:var(--cyan)"></div></div>
+            <div><div class="mute text-xs">Grid drain</div><div id="cDrain" class="num text-lg"></div></div>
+            <div><div class="mute text-xs">Verified / rejected</div><div id="cVR" class="num text-lg"></div></div>
+          </div>
+          <p class="text-xs mute mt-3 leading-relaxed max-w-[62ch]">Grid power regenerates at 6 per second. Auto-tune and auditors draw from it. If it hits zero the grid throttles: auto-tune shuts off until it recovers to 30.</p>
+        </div>
+        <h2 class="tree-h" style="--accent:var(--amber)">Infrastructure and brute force</h2>
+        <div id="tree-infra" style="--accent:var(--amber)"></div>
+      </div>
+
+      <!-- Swarm -->
+      <div id="panel-swarm" role="tabpanel" aria-labelledby="tab-swarm" hidden>
+        <div class="block">
+          <div class="grid grid-cols-2 gap-4 text-sm">
+            <div><div class="mute text-xs">Auditors on this level</div><div id="sAud" class="num text-lg" style="color:var(--amber)"></div></div>
+            <div><div class="mute text-xs">Tokens pruned</div><div id="sPruned" class="num text-lg"></div></div>
+          </div>
+          <p class="text-xs mute mt-3 leading-relaxed max-w-[62ch]">Auditors sit on pipeline junctions. They kill hopeless guesses before the verifier sees them, so those guesses never raise your error rate and their VRAM slot is freed for a fresh hypothesis.</p>
+        </div>
+        <h2 class="tree-h" style="--accent:var(--green)">Swarm autonomy</h2>
+        <div id="tree-swarm" style="--accent:var(--green)"></div>
+      </div>
+    </div>
+
+    <div class="flex flex-col h-[36%] min-h-[150px] border-t border-[color:var(--line)] bg-[color:var(--bg)]">
+      <div class="flex justify-between items-center px-4 py-1.5 text-xs">
+        <span class="font-semibold">Agent logic log</span><span id="logStat" class="num mute"></span>
+      </div>
+      <div id="log" class="num text-[11px] leading-snug px-4 pb-3 overflow-y-auto flex-1 min-h-0 scroll-thin" aria-live="off"></div>
+    </div>
+  </aside>
+</div>
+
+<!-- Level modal -->
+<div id="modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+  <div class="modal-card w-full max-w-lg rounded-lg border border-[color:var(--line)] bg-[color:var(--pane)] p-6 shadow-2xl">
+    <div id="mKicker" class="text-xs mute">Level 1 of 3</div>
+    <h1 id="mTitle" class="text-3xl font-bold mt-1 leading-tight" style="text-shadow:0 0 18px rgba(62,230,255,.35)"></h1>
+    <div id="mObj" class="text-sm mt-1" style="color:var(--cyan)"></div>
+    <p id="mBody" class="mt-4 leading-relaxed max-w-[62ch]"></p>
+    <p id="mHint" class="mt-3 text-sm mute leading-relaxed max-w-[62ch]"></p>
+    <button id="mBtn" class="btn mt-6 px-5 py-2.5 text-base sel">Start level</button>
+  </div>
+</div>
+
+<script>
+(() => {
+'use strict';
+
+/* ---------- utilities ---------- */
+const $ = (id) => document.getElementById(id);
+const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
+function gauss() { let u = 0; while (u === 0) u = Math.random(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(6.283185307 * Math.random()); }
+function rgba(hex, a) { const n = parseInt(hex.slice(1), 16); return `rgba(${n >> 16},${(n >> 8) & 255},${n & 255},${a})`; }
+const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const COL = { cyan: '#3ee6ff', violet: '#9b7bff', magenta: '#ff52d9', green: '#4dffa0', red: '#ff4f63', amber: '#ffb84d', line: '#2c3846', mute: '#7f8fa3', ink: '#d7e1ec', node: '#1e2630' };
+
+/* ---------- level + economy config ---------- */
+const PROOFS_PER_LEVEL = 3;
+const LEVELS = [
+  { name: 'The Perceptron Era', objective: 'Linear classification',
+    tol: 0.02, band: 0.08, sigma: 0.035, credit: 0.9, penalty: 0.35, gradNoise: 0.01, speed: 210, drift: 0,
+    intro: 'One input, one weight, one verifier. Every glowing token is a guess: the input multiplied by your weight. The verifier checks each guess against the truth and lights it green or crumbles it into red dust.',
+    lesson: 'A perceptron is a single number being nudged until its guesses stop failing. Nothing more mysterious. The target is visible on the number line, so slide your weight onto it and watch the error rate fall as tokens turn green.',
+    hint: 'Drag the weight slider until the cyan marker sits on the amber target line.' },
+  { name: 'The Deep Network', objective: 'Fluid dynamics singularity',
+    tol: 0.012, band: 0.06, sigma: 0.05, credit: 0.55, penalty: 0.35, gradNoise: 0.03, speed: 195, drift: 0,
+    intro: 'Three inputs merge through stacked layers. Noise compounds along every path, so guesses get thrown around by a turbulent field before they land.',
+    lesson: 'The target is hidden now, which is how real training works: you never see the answer, only which guesses passed. Green bars pile up on the gauge where guesses succeed, so steer your weight toward that cluster. Whether real 3D Navier–Stokes flows can blow up is still an open problem; here it is a stand-in target.',
+    hint: 'The truth is hidden. Find it by where green bars stack up on the gauge.' },
+  { name: 'The Agentic Swarm', objective: '4D Kakeya needle conjecture',
+    tol: 0.008, band: 0.05, sigma: 0.045, credit: 0.35, penalty: 0.3, gradNoise: 0.025, speed: 185, drift: 0.05,
+    intro: 'A mesh of agents proposes directions for a needle spinning through jagged space. Paths overlap, contradict each other and get pruned in real time.',
+    lesson: 'The correct direction drifts, so there is no answer to lock in, only one to keep tracking. Auditors, attention and cooling now matter as much as your hand on the slider. The 4D Kakeya problem is real, open research; this level borrows its imagery, not its proof.',
+    hint: 'Your weight sets the needle angle. Green ticks on the rim show where the truth points right now.' },
+];
+const LR_OPTIONS = [0.12, 0.25, 0.45, 0.7, 1.0, 1.4];
+const COOL = [1, 0.72, 0.52, 0.38, 0.26];
+const UPG = [
+  { id: 'step', tree: 'algo', name: 'Gradient descent step size', max: 5, verb: 'Upgrade',
+    cost: (l) => ({ lc: 2 + l * 2 }),
+    desc: 'Unlocks larger learning rates. You reach the target in fewer steps, but each step lands less precisely.',
+    eff: (l) => `Largest step ${LR_OPTIONS[l]}` },
+  { id: 'attention', tree: 'algo', name: 'Attention mapping', max: 1, verb: 'Unlock',
+    cost: () => ({ lc: 4 }),
+    desc: 'Drag on the canvas to paint high-priority fields. Tokens inside move and verify 2× faster, and their guesses tighten toward your weight.',
+    eff: (l) => (l ? 'Unlocked' : 'Locked') },
+  { id: 'span', tree: 'algo', req: 'attention', name: 'Attention span', max: 2, verb: 'Upgrade',
+    cost: (l) => ({ lc: 5 + l * 4 }),
+    desc: 'Hold more fields at once, and keep each one alive longer.',
+    eff: (l) => `${2 + l} fields, ${18 + l * 10}s each` },
+  { id: 'vram', tree: 'infra', name: 'VRAM buffers', max: 6, verb: 'Upgrade',
+    cost: (l) => ({ cy: Math.round(30 * Math.pow(1.65, l)) }),
+    desc: 'Raises the token cap so more hypotheses run in parallel. Bigger hardware also raises compute yield.',
+    eff: (l) => `+${l * 70} tokens, ${(1 + l * 0.8).toFixed(1)} CY/s` },
+  { id: 'cooling', tree: 'infra', name: 'Liquid nitrogen cooling', max: 4, verb: 'Upgrade',
+    cost: (l) => ({ cy: Math.round(40 * Math.pow(1.8, l)) }),
+    desc: 'Cuts the grid power drain of auto-tune and auditors, so automatic training runs for longer bursts.',
+    eff: (l) => `Drain ×${COOL[l]}` },
+  { id: 'auditor', tree: 'swarm', name: 'Auditor agents', max: 6, verb: 'Deploy',
+    cost: (l) => ({ cy: 50 + l * 40, lc: 1 + l }),
+    desc: 'Places an agent on a pipeline junction that prunes low-probability tokens before verification.',
+    eff: (l) => `${l} deployed` },
+  { id: 'consensus', tree: 'swarm', req: 'auditor', name: 'Consensus pruning', max: 1, verb: 'Unlock',
+    cost: () => ({ cy: 160, lc: 6 }),
+    desc: 'Auditors cross-check one another and also prune borderline guesses.',
+    eff: (l) => (l ? 'Active' : 'Inactive') },
+];
+
+/* ---------- state ---------- */
+const S = {
+  level: 0, proof: 0, cycle: 0,
+  w: 0.5, t: 0.73, t0: 0.73,
+  E: 100, Edisp: 100,
+  lc: 2, cy: 20, power: 100,
+  throttled: false, auditorsOnline: true, auto: false, lrIdx: 0,
+  upg: { step: 0, attention: 0, span: 0, vram: 0, cooling: 0, auditor: 0, consensus: 0 },
+  verified: 0, failed: 0, pruned: 0, lemma: 0, hyp: 400,
+  time: 0, paused: true, proofStart: 0, endless: false,
+};
+const cap = () => 60 + S.level * 40 + S.upg.vram * 70;   // later levels start with a bigger batch
+const cyRate = () => 1 + S.upg.vram * 0.8;
+const maxFields = () => 2 + S.upg.span;
+const fieldLife = () => 18 + S.upg.span * 10;
+const L = () => LEVELS[S.level];
+
+/* ---------- log (batched DOM writes) ---------- */
+const logEl = $('log'); const logQ = [];
+function log(msg, cls) { logQ.push([msg, cls || '']); if (logQ.length > 240) logQ.splice(0, logQ.length - 240); }
+setInterval(() => {
+  if (!logQ.length) return;
+  const atBottom = logEl.scrollTop + logEl.clientHeight >= logEl.scrollHeight - 30;
+  const frag = document.createDocumentFragment();
+  for (const [m, c] of logQ.splice(0, 16)) {
+    const d = document.createElement('div'); d.className = 'l ' + c;
+    d.textContent = `[${S.time.toFixed(1).padStart(6, '0')}] ${m}`; frag.appendChild(d);
+  }
+  logEl.appendChild(frag);
+  while (logEl.childElementCount > 180) logEl.firstChild.remove();
+  if (atBottom) logEl.scrollTop = logEl.scrollHeight;
+}, 120);
+
+/* ---------- canvas setup ---------- */
+const cv = $('cv'); const ctx = cv.getContext('2d');
+const staticCv = document.createElement('canvas'); const sctx = staticCv.getContext('2d');
+let W = 0, H = 0, dpr = 1;
+
+function makeSprite(hex) {
+  const c = document.createElement('canvas'); c.width = c.height = 32;
+  const g = c.getContext('2d'); const gr = g.createRadialGradient(16, 16, 0, 16, 16, 16);
+  gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(0.16, rgba(hex, 1));
+  gr.addColorStop(0.42, rgba(hex, 0.32)); gr.addColorStop(1, rgba(hex, 0));
+  g.fillStyle = gr; g.fillRect(0, 0, 32, 32); return c;
+}
+const SPR = { cyan: makeSprite(COL.cyan), magenta: makeSprite(COL.magenta), violet: makeSprite(COL.violet) };
+
+/* ---------- graph ---------- */
+const G = { nodes: [], edges: [], sources: [], junctions: [], verifier: null, end: {} };
+function addNode(nx, ny, type, label) { const n = { id: G.nodes.length, nx, ny, x: 0, y: 0, pw: 5, type, label, out: [], auditor: false, pulse: 0 }; G.nodes.push(n); return n; }
+function addEdge(a, b) { const e = { id: G.edges.length, a, b, len: 1, p: new Float32Array(8) }; G.edges.push(e); a.out.push(e.id); return e; }
+
+function buildGraph() {
+  G.nodes = []; G.edges = []; G.sources = []; G.junctions = [];
+  if (S.level === 0) {
+    const s = addNode(0.1, 0.5, 'source', 'Input x');
+    const h = addNode(0.36, 0.5, 'junction', 'w · x');
+    const v = addNode(0.62, 0.5, 'verifier', 'Verifier');
+    addEdge(s, h); addEdge(h, v);
+    G.sources = [s]; G.junctions = [h]; G.verifier = v;
+  } else if (S.level === 1) {
+    const s1 = addNode(0.09, 0.18, 'source', 'Input A'), s2 = addNode(0.09, 0.5, 'source', 'Input B'), s3 = addNode(0.09, 0.82, 'source', 'Input C');
+    const j1 = addNode(0.28, 0.32, 'junction', 'Layer 1a'), j2 = addNode(0.28, 0.68, 'junction', 'Layer 1b');
+    const j3 = addNode(0.46, 0.5, 'junction', 'Layer 2');
+    const v = addNode(0.64, 0.5, 'verifier', 'Verifier');
+    addEdge(s1, j1); addEdge(s2, j1); addEdge(s2, j2); addEdge(s3, j2); addEdge(j1, j3); addEdge(j2, j3); addEdge(j3, v);
+    G.sources = [s1, s2, s3]; G.junctions = [j3, j1, j2]; G.verifier = v;
+  } else {
+    const cols = 6, rows = 5, grid = [];
+    for (let c = 0; c < cols; c++) {
+      grid[c] = [];
+      for (let r = 0; r < rows; r++) {
+        const n = addNode(0.05 + c * (0.5 / (cols - 1)), 0.12 + r * (0.76 / (rows - 1)), c === 0 ? 'source' : 'junction', '');
+        grid[c][r] = n; if (c === 0) G.sources.push(n);
+      }
+    }
+    const v = addNode(0.64, 0.5, 'verifier', 'Verifier');
+    for (let c = 0; c < cols - 1; c++) for (let r = 0; r < rows; r++)
+      for (let k = -1; k <= 1; k++) { const rr = r + k; if (rr >= 0 && rr < rows) addEdge(grid[c][r], grid[c + 1][rr]); }
+    for (let r = 0; r < rows; r++) addEdge(grid[cols - 1][r], v);
+    G.verifier = v;
+    const js = [];
+    for (let c = 1; c < cols; c++) for (let r = 0; r < rows; r++) js.push({ n: grid[c][r], c, r });
+    js.sort((a, b) => (b.c - a.c) || (Math.abs(a.r - 2) - Math.abs(b.r - 2)));
+    G.junctions = js.map((o) => o.n);
+  }
+  placeAuditors();
+  layout();
+}
+
+function placeAuditors() {
+  for (const n of G.nodes) n.auditor = false;
+  const k = Math.min(S.upg.auditor, G.junctions.length);
+  for (let i = 0; i < k; i++) G.junctions[i].auditor = true;
+}
+
+const tmp = { x: 0, y: 0 }, tmpL = { x: 0, y: 0 };
+function bez(p, s, o) {
+  const u = 1 - s, a = u * u * u, b = 3 * u * u * s, c = 3 * u * s * s, d = s * s * s;
+  o.x = a * p[0] + b * p[2] + c * p[4] + d * p[6]; o.y = a * p[1] + b * p[3] + c * p[5] + d * p[7];
+}
+function bezLen(p) {
+  let len = 0, px = p[0], py = p[1];
+  for (let i = 1; i <= 20; i++) { bez(p, i / 20, tmpL); len += Math.hypot(tmpL.x - px, tmpL.y - py); px = tmpL.x; py = tmpL.y; }
+  return len;
+}
+function setCurve(p, ax, ay, bx, by) {
+  const dx = Math.max(30, (bx - ax) * 0.5);
+  p[0] = ax; p[1] = ay; p[2] = ax + dx; p[3] = ay; p[4] = bx - dx; p[5] = by; p[6] = bx; p[7] = by;
+}
+
+function layout() {
+  const box = W < 560 ? 38 : 52;
+  for (const n of G.nodes) {
+    n.pw = (S.level < 2 || n.type === 'verifier') ? box : 5;
+    n.x = Math.max(n.pw + 6, n.nx * W); n.y = n.ny * H;
+  }
+  for (const e of G.edges) { setCurve(e.p, e.a.x + e.a.pw, e.a.y, e.b.x - e.b.pw, e.b.y); e.len = bezLen(e.p); }
+  G.end = S.level < 2
+    ? { x: W * (W < 560 ? 0.78 : 0.86), yTop: H * 0.1, yBot: H * 0.9 }
+    : { cx: W * 0.84, cy: H * 0.5, R: Math.min(W * 0.12, H * 0.36) };
+  // particles already in their final segment need new endpoints
+  for (const p of pool) if (p.active && p.phase === 1) { landPoint(p, tmp); p.lx = tmp.x; p.ly = tmp.y; computeFinal(p); }
+  renderStatic();
+  rebuildFieldGrid();
+}
+
+function roundRect(g, x, y, w, h, r) {
+  g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r);
+  g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath();
+}
+const NODE_COL = { source: COL.violet, junction: COL.cyan, verifier: COL.amber };
+
+function renderStatic() {
+  staticCv.width = Math.max(1, W * dpr); staticCv.height = Math.max(1, H * dpr);
+  const g = sctx; g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  g.fillStyle = '#141a21'; g.fillRect(0, 0, W, H);
+  g.fillStyle = 'rgba(127,143,163,0.14)';
+  for (let y = 12; y < H; y += 24) for (let x = 12; x < W; x += 24) g.fillRect(x, y, 1, 1);
+  // edges: soft halo then core line
+  const dense = S.level === 2;
+  for (const pass of [0, 1]) {
+    g.lineWidth = pass ? (dense ? 0.8 : 1.4) : (dense ? 4 : 7);
+    g.strokeStyle = pass ? rgba(COL.cyan, dense ? 0.28 : 0.5) : rgba(COL.cyan, dense ? 0.04 : 0.07);
+    g.beginPath();
+    for (const e of G.edges) { const p = e.p; g.moveTo(p[0], p[1]); g.bezierCurveTo(p[2], p[3], p[4], p[5], p[6], p[7]); }
+    g.stroke();
+  }
+  // nodes
+  g.textBaseline = 'middle';
+  for (const n of G.nodes) {
+    const c = NODE_COL[n.type];
+    if (n.pw > 6) {
+      const w = n.pw * 2, h = 40, x = n.x - n.pw, y = n.y - h / 2;
+      g.shadowColor = c; g.shadowBlur = 14;
+      roundRect(g, x, y, w, h, 6); g.fillStyle = COL.node; g.fill();
+      g.shadowBlur = 0; g.lineWidth = 1; g.strokeStyle = rgba(c, 0.8); g.stroke();
+      g.save(); roundRect(g, x, y, w, 14, 6); g.clip(); g.fillStyle = rgba(c, 0.22); g.fillRect(x, y, w, 14); g.restore();
+      g.fillStyle = COL.ink; g.font = '600 10px "Chakra Petch", system-ui, sans-serif'; g.textAlign = 'left';
+      g.fillText(n.label, x + 6, y + 7.5);
+      g.fillStyle = COL.mute; g.font = '10px "JetBrains Mono", ui-monospace, monospace';
+      g.fillText(n.type === 'source' ? 'emit' : n.type === 'verifier' ? 'check |Δ|' : 'route', x + 6, y + 26);
+      for (const px of [x, x + w]) { g.beginPath(); g.arc(px, n.y, 3, 0, 6.283); g.fillStyle = c; g.fill(); }
+    } else {
+      g.beginPath(); g.arc(n.x, n.y, n.type === 'source' ? 4.5 : 3.5, 0, 6.283);
+      g.fillStyle = COL.node; g.fill(); g.lineWidth = 1.2; g.strokeStyle = c; g.stroke();
+    }
+  }
+  // number-line axis for levels 1 and 2
+  if (S.level < 2) {
+    const E = G.end;
+    g.strokeStyle = rgba(COL.cyan, 0.6); g.lineWidth = 1.5;
+    g.beginPath(); g.moveTo(E.x, E.yTop); g.lineTo(E.x, E.yBot); g.stroke();
+    g.font = '10px "JetBrains Mono", ui-monospace, monospace'; g.fillStyle = COL.mute; g.textAlign = 'left';
+    for (let i = 0; i <= 4; i++) {
+      const y = E.yBot - (E.yBot - E.yTop) * i / 4;
+      g.beginPath(); g.moveTo(E.x - 4, y); g.lineTo(E.x + 4, y); g.stroke();
+      g.fillText((i / 4).toFixed(2), E.x + 8, y);
+    }
+  }
+}
+
+/* ---------- particle pool (object pooling, fixed capacity) ---------- */
+const PMAX = 60 + 2 * 40 + 6 * 70 + 20;
+const pool = [];
+const freeStack = new Int32Array(PMAX); let freeTop = 0;
+for (let i = 0; i < PMAX; i++) {
+  pool.push({ idx: i, active: false, route: new Int16Array(24), rlen: 0, ri: 0, s: 0, x: 0, y: 0,
+    guess: 0, focused: false, hyp: 0, phase: 0, fp: new Float32Array(8), flen: 1, lx: 0, ly: 0, lr: 0, wob: 0 });
+  freeStack[freeTop++] = i;
+}
+let activeCount = 0, srcRR = 0;
+
+function spawn() {
+  if (freeTop === 0 || activeCount >= cap()) return false;
+  const p = pool[freeStack[--freeTop]]; p.active = true; activeCount++;
+  let n = G.sources[(srcRR++) % G.sources.length], k = 0;
+  while (n !== G.verifier && k < 24) { const eid = n.out[(Math.random() * n.out.length) | 0]; p.route[k++] = eid; n = G.edges[eid].b; }
+  p.rlen = k; p.ri = 0; p.s = 0; p.phase = 0; p.focused = false;
+  p.guess = S.w + gauss() * L().sigma;
+  p.hyp = ++S.hyp; p.wob = Math.random() * 6.283; p.lr = Math.random() * 2 - 1;
+  const e = G.edges[p.route[0]]; p.x = e.p[0]; p.y = e.p[1];
+  return true;
+}
+function kill(p) { if (!p.active) return; p.active = false; activeCount--; freeStack[freeTop++] = p.idx; }
+
+function landPoint(p, o) {
+  const g = clamp(p.guess, 0, 1), E = G.end;
+  if (S.level < 2) { o.x = E.x; o.y = E.yBot - (E.yBot - E.yTop) * g; }
+  else { const a = g * Math.PI, r = p.lr * E.R * 0.92; o.x = E.cx + Math.cos(a) * r; o.y = E.cy - Math.sin(a) * r; }
+}
+function computeFinal(p) { const v = G.verifier; setCurve(p.fp, v.x + v.pw, v.y, p.lx, p.ly); p.flen = bezLen(p.fp); }
+
+/* ---------- fx pool (typed arrays) ---------- */
+const FXN = 5000;
+const fx = { x: new Float32Array(FXN), y: new Float32Array(FXN), vx: new Float32Array(FXN), vy: new Float32Array(FXN),
+  life: new Float32Array(FXN), max: new Float32Array(FXN), kind: new Uint8Array(FXN), alive: new Uint8Array(FXN) };
+const fxFree = new Int32Array(FXN); let fxTop = 0; for (let i = FXN - 1; i >= 0; i--) fxFree[fxTop++] = i;
+const FX_GREEN = 0, FX_RED = 1, FX_GRAY = 2, FX_MAG = 3;
+function emitFx(x, y, kind, n, spd, life) {
+  if (REDUCED) n = Math.ceil(n * 0.4);
+  for (let k = 0; k < n && fxTop > 0; k++) {
+    const i = fxFree[--fxTop]; const a = Math.random() * 6.283, v = spd * (0.3 + Math.random() * 0.7);
+    fx.x[i] = x; fx.y[i] = y; fx.vx[i] = Math.cos(a) * v; fx.vy[i] = Math.sin(a) * v;
+    fx.max[i] = fx.life[i] = life * (0.6 + Math.random() * 0.6); fx.kind[i] = kind; fx.alive[i] = 1;
+  }
+}
+const rings = []; // small, short-lived
+function ring(x, y, color, r0, r1, life) { if (rings.length < 120) rings.push({ x, y, color, r0, r1, life, max: life }); }
+
+/* ---------- attention fields ---------- */
+const FIELD_R = 30, FC = 16;
+const fields = []; let draft = null;
+let fgW = 1, fgH = 1, fgrid = new Uint8Array(1);
+function rebuildFieldGrid() {
+  fgW = Math.max(1, Math.ceil(W / FC)); fgH = Math.max(1, Math.ceil(H / FC));
+  if (fgrid.length !== fgW * fgH) fgrid = new Uint8Array(fgW * fgH); else fgrid.fill(0);
+  const r2 = (FIELD_R + FC * 0.5) ** 2;
+  for (const f of fields) for (let i = 0; i < f.pts.length; i += 2) {
+    const px = f.pts[i] * W, py = f.pts[i + 1] * H;
+    const c0 = Math.max(0, ((px - FIELD_R) / FC) | 0), c1 = Math.min(fgW - 1, ((px + FIELD_R) / FC) | 0);
+    const r0 = Math.max(0, ((py - FIELD_R) / FC) | 0), r1 = Math.min(fgH - 1, ((py + FIELD_R) / FC) | 0);
+    for (let cy = r0; cy <= r1; cy++) for (let cx = c0; cx <= c1; cx++) {
+      const dx = cx * FC + FC / 2 - px, dy = cy * FC + FC / 2 - py;
+      if (dx * dx + dy * dy <= r2) fgrid[cy * fgW + cx] = 1;
+    }
+  }
+}
+function inField(x, y) {
+  if (!fields.length) return false;
+  const cx = (x / FC) | 0, cy = (y / FC) | 0;
+  return cx >= 0 && cy >= 0 && cx < fgW && cy < fgH && fgrid[cy * fgW + cx] === 1;
+}
+let lastLockMsg = -10;
+function canvasPoint(e) { const r = cv.getBoundingClientRect(); return [(e.clientX - r.left) / r.width, (e.clientY - r.top) / r.height]; }
+cv.addEventListener('pointerdown', (e) => {
+  if (S.paused) return;
+  if (!S.upg.attention) {
+    if (S.time - lastLockMsg > 2) { log('Attention mapping is locked. Unlock it under Algorithmic precision.', 'warn'); lastLockMsg = S.time; }
+    return;
+  }
+  cv.setPointerCapture(e.pointerId);
+  const [x, y] = canvasPoint(e); draft = { pts: [x, y] };
+});
+cv.addEventListener('pointermove', (e) => {
+  if (!draft) return;
+  const [x, y] = canvasPoint(e), n = draft.pts.length;
+  const dx = (x - draft.pts[n - 2]) * W, dy = (y - draft.pts[n - 1]) * H;
+  if (dx * dx + dy * dy > 144 && n < 120) draft.pts.push(x, y);
+});
+function commitDraft() {
+  if (!draft) return;
+  while (fields.length >= maxFields()) fields.shift();
+  fields.push({ pts: draft.pts, born: S.time, life: fieldLife() });
+  log(`High-priority field #${fields.length} mapped (${draft.pts.length / 2} anchors). Tokens inside verify 2× faster.`, 'mag');
+  draft = null; rebuildFieldGrid();
+}
+cv.addEventListener('pointerup', commitDraft);
+cv.addEventListener('pointercancel', () => { draft = null; });
+
+/* ---------- histogram of landed guesses ---------- */
+const BINS = 64; const histP = new Float32Array(BINS), histF = new Float32Array(BINS);
+const binOf = (g) => Math.min(BINS - 1, Math.max(0, (clamp(g, 0, 0.9999) * BINS) | 0));
+
+/* ---------- needle trail (level 3) ---------- */
+const TRAIL = 48; const trail = new Float32Array(TRAIL); let trailHead = 0, trailAcc = 0;
+
+/* ---------- fractal boundary (level 3) ---------- */
+const FRN = 180; const fractal = new Float32Array(FRN);
+(function genFractal() {
+  for (let i = 0; i < FRN; i++) {
+    const th = i / FRN * 6.283;
+    fractal[i] = 1 + 0.1 * Math.sin(3 * th + 0.7) + 0.06 * Math.sin(7 * th) + 0.035 * Math.sin(19 * th + 1.3) + (Math.random() - 0.5) * 0.07;
+  }
+})();
+
+/* ---------- core gameplay ---------- */
+function newTarget() {
+  let nt; do { nt = 0.1 + Math.random() * 0.8; } while (Math.abs(nt - S.w) < 0.25);
+  S.t0 = nt; S.t = nt; S.E = 100; S.proofStart = S.time;
+  histP.fill(0); histF.fill(0);
+}
+
+function gdStep(manual) {
+  const lr = LR_OPTIONS[S.lrIdx];
+  const grad = (S.w - S.t) + gauss() * L().gradNoise;   // noisy gradient estimate
+  const before = S.w;
+  S.w = clamp(S.w - lr * grad, 0, 1);
+  syncWeight();
+  if (manual) log(`∇ step: w ${before.toFixed(3)} → ${S.w.toFixed(3)} (lr ${lr})`, 'sys');
+}
+
+function auditRejects(p) {
+  const thr = L().band * (S.upg.consensus ? 1.15 : 1.6);
+  return Math.abs(p.guess - S.t) > thr;
+}
+
+function resolve(p) {
+  const lv = L(), d = Math.abs(p.guess - S.t), pass = d < lv.band;
+  const b = binOf(p.guess);
+  G.verifier.pulse = 1;
+  if (pass) {
+    S.E -= lv.credit * (p.focused ? 2 : 1); S.verified++; S.lemma++;
+    histP[b] += 1;
+    emitFx(p.x, p.y, FX_GREEN, p.focused ? 9 : 6, 90, 0.45);
+    ring(p.x, p.y, COL.green, 2, 10, 0.3);
+    if (Math.random() < 0.035) log(`Hypothesis #${p.hyp} verified, |Δ|=${d.toFixed(3)} within band ${lv.band.toFixed(3)}`, 'ok');
+    if (S.lemma >= 120) { S.lemma -= 120; S.lc += 1; log('Lemma accepted by the Lean kernel. +1 certificate', 'mag'); }
+  } else {
+    S.E += lv.penalty; S.failed++;
+    histF[b] += 1;
+    emitFx(p.x, p.y, FX_RED, 14, 45, 1.2);
+    if (Math.random() < 0.05) log(`Hypothesis #${p.hyp} rejected by Verifier: |Δ|=${d.toFixed(3)} exceeds band ${lv.band.toFixed(3)}`, 'bad');
+  }
+  kill(p);
+}
+
+function prune(p, node) {
+  S.pruned++;
+  emitFx(p.x, p.y, FX_GRAY, 6, 40, 0.5);
+  if (Math.random() < 0.06) log(`Auditor@${node.label || 'mesh'} pruned #${p.hyp} (low probability), freed 1 VRAM slot`, 'warn');
+  kill(p);
+}
+
+let converging = false;
+function converge() {
+  converging = true;
+  const lv = L(), mult = 1 + S.cycle * 0.5;
+  const fast = (S.time - S.proofStart) < 40;
+  const lc = Math.round((3 + S.level * 2 + (fast ? 2 : 0)) * mult), cy = Math.round(25 * (S.level + 1) * mult);
+  S.lc += lc; S.cy += cy; S.proof++;
+  const E = G.end;
+  if (S.level < 2) ring(E.x, E.yBot - (E.yBot - E.yTop) * S.t, COL.green, 6, 120, 1.1);
+  else ring(E.cx, E.cy, COL.green, 10, E.R * 1.6, 1.1);
+  log(`Proof ${S.proof}/${PROOFS_PER_LEVEL} closed. Error 0.00%. Paid ${lc} LC, ${cy} CY${fast ? ' (fast-proof bonus)' : ''}.`, 'ok');
+  if (S.proof >= PROOFS_PER_LEVEL) {
+    S.proof = 0;
+    if (S.level < 2) {
+      S.level++; clearBoard(); buildGraph(); newTarget(); showLevelModal();
+    } else {
+      S.cycle++; S.endless = true; newTarget(); showVictoryModal();
+    }
+  } else newTarget();
+  renderLevelText();
+  converging = false;
+}
+
+function clearBoard() {
+  for (const p of pool) if (p.active) kill(p);
+  fields.length = 0; rebuildFieldGrid();
+  trail.fill(0);
+}
+
+/* ---------- update ---------- */
+let emitAcc = 0, autoAcc = 0, autoLogAcc = 0;
+function update(dt) {
+  S.time += dt;
+  const lv = L();
+  if (lv.drift) S.t = clamp(S.t0 + lv.drift * Math.sin(S.time * 0.12), 0.02, 0.98);
+
+  // economy
+  S.cy += cyRate() * dt;
+  const audCount = Math.min(S.upg.auditor, G.junctions.length);
+  let drain = (S.auto ? 14 : 0) + (S.auditorsOnline ? audCount * 0.5 : 0);
+  drain *= COOL[S.upg.cooling];
+  S.power = clamp(S.power + (6 - drain) * dt, 0, 100);
+  if (S.power <= 0) {
+    if (S.auto) { S.auto = false; S.throttled = true; log('Grid power exhausted. Auto-tune throttled until power recovers to 30.', 'warn'); syncAuto(); }
+    if (S.auditorsOnline && audCount) { S.auditorsOnline = false; log('Auditors offline: insufficient grid power.', 'warn'); }
+  }
+  if (S.throttled && S.power >= 30) { S.throttled = false; log('Grid recovered. Auto-tune available.', 'sys'); syncAuto(); }
+  if (!S.auditorsOnline && S.power >= 25) { S.auditorsOnline = true; log('Auditors back online.', 'sys'); }
+
+  // auto-tune
+  if (S.auto) {
+    autoAcc += dt; autoLogAcc += dt;
+    while (autoAcc >= 0.15) { autoAcc -= 0.15; gdStep(false); }
+    if (autoLogAcc > 1.4) { autoLogAcc = 0; log(`auto-tune: w=${S.w.toFixed(3)} lr=${LR_OPTIONS[S.lrIdx]} power=${S.power.toFixed(0)}`, 'dim'); }
+  }
+
+  // emission: aim to keep the VRAM budget full
+  emitAcc += (cap() / 3.0) * dt;
+  while (emitAcc >= 1) { if (!spawn()) { emitAcc = 0; break; } emitAcc -= 1; }
+
+  // particles
+  const base = lv.speed, lvl = S.level, t = S.time;
+  for (let i = 0; i < PMAX; i++) {
+    const p = pool[i]; if (!p.active) continue;
+    const f = inField(p.x, p.y);
+    if (f && !p.focused) {
+      p.focused = true; p.guess += (S.w - p.guess) * 0.6;
+      if (Math.random() < 0.03) log(`#${p.hyp} entered high-priority field, variance tightened`, 'mag');
+    }
+    const spd = base * (f ? 2 : 1);
+    if (p.phase === 0) {
+      let e = G.edges[p.route[p.ri]];
+      p.s += spd * dt / e.len;
+      while (p.s >= 1) {
+        const node = e.b; node.pulse = Math.min(1, node.pulse + 0.25);
+        p.s -= 1;
+        if (node.auditor && S.auditorsOnline && auditRejects(p)) { bez(e.p, 1, tmp); p.x = tmp.x; p.y = tmp.y; prune(p, node); break; }
+        p.ri++;
+        if (p.ri >= p.rlen) { p.phase = 1; landPoint(p, tmp); p.lx = tmp.x; p.ly = tmp.y; computeFinal(p); break; }
+        e = G.edges[p.route[p.ri]];
+      }
+      if (!p.active) continue;
+      if (p.phase === 0) {
+        bez(e.p, p.s, tmp);
+        const env = Math.sin(Math.PI * p.s);
+        if (lvl === 1) { const a = flowAngle(tmp.x, tmp.y, t); tmp.x += Math.cos(a) * 20 * env; tmp.y += Math.sin(a) * 20 * env; }
+        else if (lvl === 2) { tmp.y += Math.sin(t * 4 + p.wob) * 3 * env; }
+        p.x = tmp.x; p.y = tmp.y; continue;
+      }
+    }
+    // final segment: verifier -> landing point
+    p.s += spd * dt / p.flen;
+    if (p.s >= 1) { p.x = p.lx; p.y = p.ly; resolve(p); continue; }
+    bez(p.fp, p.s, tmp);
+    if (lvl === 1) { const a = flowAngle(tmp.x, tmp.y, t), env = Math.sin(Math.PI * p.s) * 10; tmp.x += Math.cos(a) * env; tmp.y += Math.sin(a) * env; }
+    p.x = tmp.x; p.y = tmp.y;
+  }
+
+  // fx
+  for (let i = 0; i < FXN; i++) {
+    if (!fx.alive[i]) continue;
+    fx.life[i] -= dt;
+    if (fx.life[i] <= 0) { fx.alive[i] = 0; fxFree[fxTop++] = i; continue; }
+    if (fx.kind[i] === FX_RED) { fx.vy[i] += 30 * dt; fx.vx[i] *= 0.98; }
+    else { fx.vx[i] *= 0.92; fx.vy[i] *= 0.92; }
+    fx.x[i] += fx.vx[i] * dt; fx.y[i] += fx.vy[i] * dt;
+  }
+  for (let i = rings.length - 1; i >= 0; i--) { rings[i].life -= dt; if (rings[i].life <= 0) rings.splice(i, 1); }
+  for (const n of G.nodes) n.pulse *= Math.exp(-dt * 5);
+
+  // fields expire
+  let changed = false;
+  for (let i = fields.length - 1; i >= 0; i--) if (S.time - fields[i].born > fields[i].life) { fields.splice(i, 1); changed = true; }
+  if (changed) rebuildFieldGrid();
+
+  // histogram decay (half-life ~6s)
+  const k = Math.pow(0.5, dt / 6);
+  for (let i = 0; i < BINS; i++) { histP[i] *= k; histF[i] *= k; }
+
+  // needle trail
+  trailAcc += dt; if (trailAcc > 0.08) { trailAcc = 0; trail[trailHead] = S.w; trailHead = (trailHead + 1) % TRAIL; }
+
+  // error: can never sit below what the weight's distance allows
+  const d = Math.abs(S.w - S.t);
+  const floor = d <= lv.tol ? 0 : Math.min(100, (d - lv.tol) * 320);
+  S.E = clamp(S.E, floor, 100);
+  S.Edisp += (S.E - S.Edisp) * Math.min(1, dt * 8);
+  if (S.E <= 0 && !converging) converge();
+}
+
+function flowAngle(x, y, t) {
+  return Math.sin(x * 0.007 + t * 0.5) * 1.8 + Math.cos(y * 0.009 - t * 0.35) * 1.8 + Math.sin((x - y) * 0.004 + t * 0.25) * 1.2;
+}
+
+/* ---------- render ---------- */
+function render(rt) {
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1;
+  ctx.drawImage(staticCv, 0, 0, W, H);
+  const t = S.time;
+  if (S.level === 1) drawFlow(t);
+  if (S.level === 2) drawFractal(t);
+  drawFields(rt);
+  drawEndpoint(t, rt);
+  drawNodesDynamic(rt);
+  ctx.globalCompositeOperation = 'lighter';
+  drawParticles();
+  drawFx();
+  ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1;
+}
+
+function drawFlow(t) {
+  ctx.strokeStyle = rgba(COL.violet, 0.2); ctx.lineWidth = 1;
+  ctx.beginPath();
+  for (let y = 17; y < H; y += 34) for (let x = 17; x < W * 0.76; x += 34) {
+    const a = flowAngle(x, y, t); ctx.moveTo(x, y); ctx.lineTo(x + Math.cos(a) * 11, y + Math.sin(a) * 11);
+  }
+  ctx.stroke();
+}
+
+function drawFractal(t) {
+  const E = G.end;
+  for (const [scale, dir, alpha] of [[1.08, 1, 0.55], [0.66, -1.6, 0.3], [0.38, 2.3, 0.22]]) {
+    const rot = t * 0.07 * dir;
+    ctx.beginPath();
+    for (let i = 0; i <= FRN; i++) {
+      const j = i % FRN, a = j / FRN * 6.283 + rot, r = E.R * scale * fractal[(j * (scale < 1 ? 3 : 1)) % FRN];
+      const x = E.cx + Math.cos(a) * r, y = E.cy + Math.sin(a) * r;
+      i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+    }
+    ctx.fillStyle = rgba(COL.violet, 0.03); ctx.fill();
+    ctx.strokeStyle = rgba(COL.violet, alpha); ctx.lineWidth = 1; ctx.stroke();
+  }
+}
+
+function drawFields(rt) {
+  const all = draft ? fields.concat([{ pts: draft.pts, born: S.time, life: 999, draft: true }]) : fields;
+  for (const f of all) {
+    const rem = f.life - (S.time - f.born), a = f.draft ? 0.8 : Math.min(1, rem / 3);
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    ctx.beginPath();
+    for (let i = 0; i < f.pts.length; i += 2) { const x = f.pts[i] * W, y = f.pts[i + 1] * H; i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }
+    if (f.pts.length === 2) ctx.lineTo(f.pts[0] * W + 0.1, f.pts[1] * H);
+    ctx.lineWidth = FIELD_R * 2; ctx.strokeStyle = rgba(COL.magenta, 0.1 * a); ctx.stroke();
+    ctx.lineWidth = 1.5; ctx.setLineDash([4, 6]); ctx.lineDashOffset = -rt * 20;
+    ctx.strokeStyle = rgba(COL.magenta, 0.65 * a); ctx.stroke(); ctx.setLineDash([]);
+  }
+}
+
+function drawEndpoint(t, rt) {
+  const E = G.end, lv = L();
+  ctx.font = '11px "JetBrains Mono", ui-monospace, monospace'; ctx.textBaseline = 'middle';
+  if (S.level < 2) {
+    const span = E.yBot - E.yTop, bh = span / BINS;
+    ctx.fillStyle = rgba(COL.green, 0.55);
+    for (let i = 0; i < BINS; i++) if (histP[i] > 0.05) { const y = E.yBot - (i + 1) * bh; ctx.fillRect(E.x - 3 - Math.min(70, histP[i] * 3), y + 0.5, Math.min(70, histP[i] * 3), bh - 1); }
+    ctx.fillStyle = rgba(COL.red, 0.45);
+    for (let i = 0; i < BINS; i++) if (histF[i] > 0.05) { const y = E.yBot - (i + 1) * bh; ctx.fillRect(E.x + 3, y + 0.5, Math.min(45, histF[i] * 2.5), bh - 1); }
+    const ty = E.yBot - span * S.t;
+    if (S.level === 0) {
+      ctx.strokeStyle = COL.amber; ctx.lineWidth = 1.5; ctx.setLineDash([5, 4]);
+      ctx.beginPath(); ctx.moveTo(E.x - 80, ty); ctx.lineTo(E.x + 50, ty); ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillStyle = COL.amber; ctx.textAlign = 'right'; ctx.fillText(`target ${S.t.toFixed(3)}`, E.x - 84, ty);
+    } else {
+      // hidden singularity: a faint vortex hint only
+      ctx.strokeStyle = rgba(COL.violet, 0.16); ctx.lineWidth = 1.2;
+      for (let k = 0; k < 3; k++) { ctx.beginPath(); ctx.arc(E.x, ty, 10 + k * 9, rt * (1.4 + k * 0.5), rt * (1.4 + k * 0.5) + 3.6); ctx.stroke(); }
+    }
+    const wy = E.yBot - span * S.w;
+    ctx.fillStyle = COL.cyan; ctx.shadowColor = COL.cyan; ctx.shadowBlur = 10;
+    ctx.beginPath(); ctx.moveTo(E.x + 6, wy); ctx.lineTo(E.x + 16, wy - 6); ctx.lineTo(E.x + 16, wy + 6); ctx.closePath(); ctx.fill();
+    ctx.shadowBlur = 0; ctx.textAlign = 'left'; ctx.fillText(`w ${S.w.toFixed(3)}`, E.x + 20, wy);
+  } else {
+    // needle trail: overlapping past orientations
+    for (let k = 0; k < TRAIL; k++) {
+      const idx = (trailHead + k) % TRAIL, a = trail[idx] * Math.PI, alpha = (k / TRAIL) * 0.14;
+      ctx.strokeStyle = rgba(COL.cyan, alpha); ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(E.cx - Math.cos(a) * E.R, E.cy + Math.sin(a) * E.R); ctx.lineTo(E.cx + Math.cos(a) * E.R, E.cy - Math.sin(a) * E.R); ctx.stroke();
+    }
+    // rim ticks: where guesses passed / failed
+    const R = E.R * 1.14;
+    for (const [h, col, sc] of [[histP, COL.green, 2.2], [histF, COL.red, 1.6]]) {
+      ctx.strokeStyle = rgba(col, 0.7); ctx.lineWidth = 2; ctx.beginPath();
+      for (let i = 0; i < BINS; i++) if (h[i] > 0.05) {
+        const a = (i + 0.5) / BINS * Math.PI, len = Math.min(26, h[i] * sc);
+        for (const s of [1, -1]) {
+          const cx = Math.cos(a) * s, cy = -Math.sin(a) * s;
+          ctx.moveTo(E.cx + cx * R, E.cy + cy * R); ctx.lineTo(E.cx + cx * (R + len), E.cy + cy * (R + len));
+        }
+      }
+      ctx.stroke();
+    }
+    const a = S.w * Math.PI;
+    ctx.strokeStyle = COL.cyan; ctx.lineWidth = 2.2; ctx.shadowColor = COL.cyan; ctx.shadowBlur = 12;
+    ctx.beginPath(); ctx.moveTo(E.cx - Math.cos(a) * E.R, E.cy + Math.sin(a) * E.R); ctx.lineTo(E.cx + Math.cos(a) * E.R, E.cy - Math.sin(a) * E.R); ctx.stroke();
+    ctx.shadowBlur = 0; ctx.fillStyle = COL.cyan; ctx.textAlign = 'center';
+    ctx.fillText(`θ = ${(S.w * 180).toFixed(1)}°`, E.cx, E.cy + E.R * 1.14 + 34 > H - 8 ? H - 10 : E.cy + E.R * 1.14 + 34);
+  }
+  for (const r of rings) {
+    const k = 1 - r.life / r.max;
+    ctx.strokeStyle = rgba(r.color, (1 - k) * 0.9); ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(r.x, r.y, r.r0 + (r.r1 - r.r0) * k, 0, 6.283); ctx.stroke();
+  }
+}
+
+function drawNodesDynamic(rt) {
+  for (const n of G.nodes) {
+    if (n.pulse > 0.04) {
+      const c = NODE_COL[n.type];
+      ctx.globalAlpha = n.pulse * 0.6; ctx.strokeStyle = c; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.arc(n.pw > 6 ? n.x + n.pw : n.x, n.y, 5 + n.pulse * 5, 0, 6.283); ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+    if (n.auditor) {
+      const on = S.auditorsOnline, x = n.pw > 6 ? n.x : n.x, y = n.pw > 6 ? n.y - 30 : n.y - 12, r = 7;
+      ctx.beginPath();
+      for (let k = 0; k < 6; k++) { const a = k / 6 * 6.283 + rt * 0.6; const px = x + Math.cos(a) * r, py = y + Math.sin(a) * r; k ? ctx.lineTo(px, py) : ctx.moveTo(px, py); }
+      ctx.closePath();
+      ctx.fillStyle = on ? rgba(COL.amber, 0.18) : 'rgba(127,143,163,0.12)'; ctx.fill();
+      ctx.strokeStyle = on ? COL.amber : COL.mute; ctx.lineWidth = 1.2; ctx.stroke();
+      ctx.fillStyle = on ? COL.amber : COL.mute; ctx.font = '600 8px "Chakra Petch", system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText('A', x, y + 0.5);
+    }
+  }
+}
+
+function drawParticles() {
+  const sz = S.level === 2 ? 9 : 11, h = sz / 2;
+  const base = S.level === 1 ? SPR.violet : SPR.cyan;
+  for (let i = 0; i < PMAX; i++) {
+    const p = pool[i]; if (!p.active) continue;
+    ctx.drawImage(p.focused ? SPR.magenta : base, p.x - h, p.y - h, sz, sz);
+  }
+}
+
+function drawFx() {
+  const styles = [COL.green, COL.red, '#8aa0b6', COL.magenta];
+  for (let kind = 0; kind < 4; kind++) {
+    ctx.fillStyle = styles[kind];
+    const s = kind === FX_RED ? 1.6 : 2;
+    for (let i = 0; i < FXN; i++) {
+      if (!fx.alive[i] || fx.kind[i] !== kind) continue;
+      ctx.globalAlpha = fx.life[i] / fx.max[i];
+      ctx.fillRect(fx.x[i] - s / 2, fx.y[i] - s / 2, s, s);
+    }
+  }
+  ctx.globalAlpha = 1;
+}
+
+/* ---------- UI wiring ---------- */
+const slider = $('wSlider');
+function syncWeight() { slider.value = S.w; $('wVal').textContent = S.w.toFixed(3); }
+slider.addEventListener('input', () => { S.w = parseFloat(slider.value); $('wVal').textContent = S.w.toFixed(3); });
+document.querySelectorAll('[data-nudge]').forEach((b) => b.addEventListener('click', () => { S.w = clamp(S.w + parseFloat(b.dataset.nudge), 0, 1); syncWeight(); }));
+
+function renderLR() {
+  const row = $('lrRow'); row.innerHTML = '';
+  LR_OPTIONS.forEach((lr, i) => {
+    const b = document.createElement('button');
+    b.className = 'btn num text-xs px-1' + (i === S.lrIdx ? ' sel' : '');
+    b.textContent = lr; b.disabled = i > S.upg.step;
+    b.setAttribute('aria-pressed', i === S.lrIdx);
+    b.title = i > S.upg.step ? 'Unlock with Gradient descent step size' : `Learning rate ${lr}`;
+    b.addEventListener('click', () => { S.lrIdx = i; renderLR(); log(`Learning rate set to ${lr}`, 'sys'); });
+    row.appendChild(b);
+  });
+}
+function syncAuto() {
+  const b = $('autoBtn');
+  b.textContent = S.auto ? 'Auto-tune on' : (S.throttled ? 'Auto-tune throttled' : 'Auto-tune off');
+  b.classList.toggle('on', S.auto); b.setAttribute('aria-checked', S.auto); b.disabled = S.throttled;
+}
+function toggleAuto() {
+  if (S.throttled) return;
+  S.auto = !S.auto; syncAuto();
+  log(S.auto ? `Auto-tune engaged (lr ${LR_OPTIONS[S.lrIdx]}). Drawing grid power.` : 'Auto-tune disengaged.', 'sys');
+}
+$('autoBtn').addEventListener('click', toggleAuto);
+let stepCool = 0;
+function manualStep() { if (S.time - stepCool < 0.25) return; stepCool = S.time; gdStep(true); }
+$('stepBtn').addEventListener('click', manualStep);
+
+// tabs
+const tabs = ['tune', 'compute', 'swarm'];
+function selectTab(name) {
+  for (const n of tabs) {
+    const t = $('tab-' + n), on = n === name;
+    t.setAttribute('aria-selected', on); t.tabIndex = on ? 0 : -1; $('panel-' + n).hidden = !on;
+  }
+}
+tabs.forEach((n, i) => {
+  const t = $('tab-' + n);
+  t.addEventListener('click', () => selectTab(n));
+  t.addEventListener('keydown', (e) => {
+    if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+    const j = (i + (e.key === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length; selectTab(tabs[j]); $('tab-' + tabs[j]).focus();
+  });
+});
+
+// upgrade cards
+const cards = {};
+function costFor(u) { return u.cost(S.upg[u.id]); }
+function affordable(c) { return (c.lc || 0) <= S.lc && (c.cy || 0) <= Math.floor(S.cy); }
+function buildCards() {
+  for (const tree of ['algo', 'infra', 'swarm']) $('tree-' + tree).innerHTML = '';
+  for (const u of UPG) {
+    const el = document.createElement('div'); el.className = 'upg';
+    el.innerHTML = `
+      <div class="flex items-start justify-between gap-3">
+        <div class="min-w-0">
+          <div class="font-semibold text-sm">${u.name}</div>
+          <div class="flex gap-1 mt-1" data-pips></div>
+        </div>
+        <button class="btn shrink-0" data-buy></button>
+      </div>
+      <p class="text-xs mute mt-1.5 leading-relaxed max-w-[62ch]">${u.desc}</p>
+      <div class="flex flex-wrap items-center gap-2 mt-1.5 text-xs">
+        <span data-eff class="num"></span><span data-cost class="flex gap-1"></span>
+      </div>`;
+    $('tree-' + u.tree).appendChild(el);
+    const pips = el.querySelector('[data-pips]');
+    for (let i = 0; i < u.max; i++) { const p = document.createElement('i'); p.className = 'pip'; pips.appendChild(p); }
+    const btn = el.querySelector('[data-buy]');
+    btn.addEventListener('click', () => buy(u));
+    cards[u.id] = { el, btn, pips: pips.children, eff: el.querySelector('[data-eff]'), cost: el.querySelector('[data-cost]') };
+  }
+  refreshCards();
+}
+function refreshCards() {
+  for (const u of UPG) {
+    const c = cards[u.id], lvl = S.upg[u.id], maxed = lvl >= u.max;
+    const locked = u.req && !S.upg[u.req];
+    const cost = costFor(u), ok = !maxed && !locked && affordable(cost);
+    for (let i = 0; i < u.max; i++) c.pips[i].classList.toggle('full', i < lvl);
+    c.btn.textContent = maxed ? 'Maxed' : locked ? 'Locked' : u.verb;
+    c.btn.disabled = !ok;
+    c.el.classList.toggle('can', ok);
+    c.eff.textContent = maxed ? u.eff(lvl) : `${u.eff(lvl)}  →  ${u.eff(lvl + 1)}`;
+    if (maxed) c.cost.innerHTML = '';
+    else if (locked) c.cost.innerHTML = `<span class="cost">Needs ${UPG.find((x) => x.id === u.req).name}</span>`;
+    else {
+      let h = '';
+      if (cost.lc) h += `<span class="cost lc num ${cost.lc > S.lc ? 'short' : ''}">${cost.lc} LC</span>`;
+      if (cost.cy) h += `<span class="cost cy num ${cost.cy > Math.floor(S.cy) ? 'short' : ''}">${cost.cy} CY</span>`;
+      c.cost.innerHTML = h;
+    }
+  }
+}
+function buy(u) {
+  const lvl = S.upg[u.id]; if (lvl >= u.max) return;
+  if (u.req && !S.upg[u.req]) return;
+  const c = costFor(u); if (!affordable(c)) return;
+  S.lc -= c.lc || 0; S.cy -= c.cy || 0; S.upg[u.id]++;
+  log(`${u.name}: ${u.eff(S.upg[u.id])}`, 'sys');
+  if (u.id === 'step') renderLR();
+  if (u.id === 'auditor') {
+    placeAuditors();
+    if (S.upg.auditor > G.junctions.length) log(`This level only has ${G.junctions.length} junction slot(s). Extra auditors wait for the next level.`, 'warn');
+  }
+  if (u.id === 'attention') renderLevelText();
+  refreshCards();
+}
+
+function renderLevelText() {
+  const lv = L();
+  $('lvlName').textContent = lv.name;
+  $('lvlObj').textContent = S.endless
+    ? `${lv.objective}, frontier run ${S.cycle}, proof ${S.proof + 1} of ${PROOFS_PER_LEVEL}`
+    : `${lv.objective}, proof ${S.proof + 1} of ${PROOFS_PER_LEVEL}`;
+  $('lesson').textContent = lv.lesson;
+  $('hint').textContent = S.upg.attention
+    ? 'Drag on the canvas to paint attention fields. Keys: ← → nudge weight (Shift for 0.01), A auto-tune, G gradient step.'
+    : 'Keys: ← → nudge weight (Shift for 0.01), A auto-tune, G gradient step.';
+}
+
+function updateHUD() {
+  const e = Math.max(0, S.Edisp);
+  const he = $('hudErr'); he.textContent = e.toFixed(2) + '%';
+  he.style.color = e > 60 ? 'var(--red)' : e > 20 ? 'var(--amber)' : 'var(--green)';
+  $('hudLC').textContent = S.lc;
+  $('hudCY').textContent = Math.floor(S.cy);
+  $('hudCYr').textContent = `+${cyRate().toFixed(1)}/s`;
+  $('hudPowN').textContent = S.power.toFixed(0);
+  const pw = $('hudPow'); pw.style.width = S.power + '%';
+  pw.style.background = S.power < 25 ? 'var(--red)' : S.power < 55 ? 'var(--amber)' : 'var(--green)';
+  $('hudTok').textContent = `${activeCount}/${cap()}`;
+  $('hudVram').style.width = (activeCount / cap() * 100) + '%';
+  const d = Math.abs(S.w - S.t), lv = L();
+  let hint;
+  if (S.level === 0) hint = `Target ${S.t.toFixed(3)}. You are ${d <= lv.tol ? 'inside tolerance; let the tokens finish the proof.' : `${d.toFixed(3)} away.`}`;
+  else hint = d <= lv.tol
+    ? 'Inside tolerance. Throughput now decides how fast the proof closes.'
+    : 'Target hidden. Steer toward where green hits cluster on the ' + (S.level === 1 ? 'gauge.' : 'rim.');
+  $('targetHint').textContent = hint;
+  $('targetHint').style.color = d <= lv.tol ? 'var(--green)' : 'var(--mute)';
+  const drain = ((S.auto ? 14 : 0) + (S.auditorsOnline ? Math.min(S.upg.auditor, G.junctions.length) * 0.5 : 0)) * COOL[S.upg.cooling];
+  $('cRate').textContent = `${cyRate().toFixed(1)} CY/s`;
+  $('cCap').textContent = `${cap()} tokens`;
+  $('cDrain').textContent = `${drain.toFixed(1)}/s`;
+  $('cDrain').style.color = drain > 6 ? 'var(--red)' : 'var(--green)';
+  $('cVR').textContent = `${S.verified} / ${S.failed}`;
+  $('sAud').textContent = `${Math.min(S.upg.auditor, G.junctions.length)} of ${G.junctions.length} slots${S.auditorsOnline ? '' : ' (offline)'}`;
+  $('sPruned').textContent = S.pruned;
+  $('logStat').textContent = `hyp #${S.hyp}`;
+  refreshCards();
+}
+
+// keyboard
+window.addEventListener('keydown', (e) => {
+  if (S.paused) return;
+  const tag = (e.target.tagName || '').toLowerCase();
+  if (tag === 'input' || tag === 'textarea') return;
+  if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+    const step = (e.shiftKey ? 0.01 : 0.001) * (e.key === 'ArrowLeft' ? -1 : 1);
+    if (e.target.getAttribute('role') === 'tab') return;
+    S.w = clamp(S.w + step, 0, 1); syncWeight(); e.preventDefault();
+  } else if (e.key === 'a' || e.key === 'A') toggleAuto();
+  else if (e.key === 'g' || e.key === 'G') manualStep();
+});
+
+// modal
+const modal = $('modal');
+function openModal({ kicker, title, obj, body, hint, btn, onGo }) {
+  $('mKicker').textContent = kicker; $('mTitle').textContent = title; $('mObj').textContent = obj;
+  $('mBody').textContent = body; $('mHint').textContent = hint; $('mBtn').textContent = btn;
+  modal.hidden = false; S.paused = true;
+  const b = $('mBtn');
+  b.onclick = () => { modal.hidden = true; S.paused = false; onGo && onGo(); };
+  setTimeout(() => b.focus(), 50);
+}
+function showLevelModal() {
+  const lv = L();
+  if (S.auto) { S.auto = false; syncAuto(); }
+  openModal({ kicker: `Level ${S.level + 1} of 3`, title: lv.name, obj: `Objective: ${lv.objective}`,
+    body: lv.intro, hint: lv.hint, btn: 'Start level',
+    onGo: () => { log(`=== ${lv.name.toUpperCase()} :: objective "${lv.objective}" ===`, 'sys'); renderLevelText(); } });
+}
+function showVictoryModal() {
+  openModal({ kicker: 'Campaign complete', title: 'You reached the frontier',
+    obj: `${S.verified} hypotheses verified, ${S.pruned} pruned`,
+    body: 'Every stage was the same machine: a number makes guesses, a checker scores them, and compute decides how many guesses you can afford. Scale and structure changed. The mystery never showed up.',
+    hint: 'Keep proving in frontier mode. Each run pays 50% more and the needle never stops drifting.',
+    btn: 'Keep proving', onGo: () => { log(`=== FRONTIER RUN ${S.cycle} ===`, 'sys'); renderLevelText(); } });
+}
+
+/* ---------- resize ---------- */
+const wrap = $('canvasWrap');
+function resize() {
+  const r = wrap.getBoundingClientRect();
+  dpr = Math.min(window.devicePixelRatio || 1, 2);
+  W = Math.max(1, Math.floor(r.width)); H = Math.max(1, Math.floor(r.height));
+  cv.width = W * dpr; cv.height = H * dpr;
+  layout();
+}
+new ResizeObserver(resize).observe(wrap);
+
+/* ---------- main loop ---------- */
+let last = performance.now(), fpsFrames = 0, fpsT = 0, uiT = 0;
+function frame(now) {
+  let dt = (now - last) / 1000; last = now;
+  if (dt > 0.05) dt = 0.05;
+  if (!S.paused) update(dt);
+  render(now / 1000);
+  fpsFrames++; fpsT += dt;
+  if (fpsT >= 0.5) { $('fps').textContent = `${Math.round(fpsFrames / fpsT)} fps`; fpsFrames = 0; fpsT = 0; }
+  uiT += dt; if (uiT >= 0.1) { uiT = 0; updateHUD(); }
+  requestAnimationFrame(frame);
+}
+
+/* ---------- boot ---------- */
+buildGraph();
+newTarget();
+syncWeight(); renderLR(); syncAuto(); buildCards(); renderLevelText();
+resize();
+log('Frontier runtime online. 1 source node, 1 verifier, 0 mysteries.', 'sys');
+log('Each token is a number. Each check is a subtraction. That is the whole trick.', 'dim');
+showLevelModal();
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
